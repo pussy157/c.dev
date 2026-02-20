@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="320" viewBox="0 0 900 320">
+  <style>
+    text{font-family:Arial, Helvetica, sans-serif; font-size:16px; fill:#111}
+    .box{fill:#fff; stroke:#111; stroke-width:2; rx:14; ry:14}
+    .seg{fill:#f7f7f7; stroke:#111; stroke-width:1.5}
+    .small{font-size:13px; fill:#333}
+  </style>
+  <rect class="box" x="50" y="40" width="350" height="240"/>
+  <text x="65" y="70" font-weight="bold">Stack (pilha)</text>
+  <rect class="seg" x="70" y="90" width="310" height="40"/>
+  <text x="85" y="115">frame da função atual</text>
+  <rect class="seg" x="70" y="140" width="310" height="40"/>
+  <text x="85" y="165">variáveis locais</text>
+  <rect class="seg" x="70" y="190" width="310" height="40"/>
+  <text x="85" y="215">endereços de retorno</text>
+  <text class="small" x="65" y="255">• rápido • automático • vida curta</text>
+
+  <rect class="box" x="500" y="40" width="350" height="240"/>
+  <text x="515" y="70" font-weight="bold">Heap (montão)</text>
+  <rect class="seg" x="520" y="90" width="310" height="60"/>
+  <text x="535" y="120">memória alocada</text>
+  <text class="small" x="535" y="140">(new / malloc)</text>
+  <rect class="seg" x="520" y="160" width="310" height="60"/>
+  <text x="535" y="190">estruturas grandes</text>
+  <text class="small" x="535" y="210">(vector, objetos, buffers)</text>
+  <text class="small" x="515" y="255">• flexível • precisa liberar (RAII ajuda)</text>
+
+  <text class="small" x="50" y="305">Em C++, bugs clássicos: usar ponteiro para stack depois que a função acabou; esquecer delete/free no heap; acessar fora do array.</text>
+</svg>

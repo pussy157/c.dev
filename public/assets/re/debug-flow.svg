@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="260" viewBox="0 0 900 260">
+  <style>
+    text{font-family:Arial, Helvetica, sans-serif; font-size:16px; fill:#111}
+    .box{fill:#fff; stroke:#111; stroke-width:2; rx:14; ry:14}
+    .arrow{stroke:#111; stroke-width:2; fill:none; marker-end:url(#m)}
+    .small{font-size:13px; fill:#333}
+  </style>
+  <defs>
+    <marker id="m" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L10,3 L0,6 Z" fill="#111"/>
+    </marker>
+  </defs>
+  <rect class="box" x="40" y="60" width="200" height="90"/>
+  <text x="70" y="95">Breakpoint</text>
+  <text class="small" x="70" y="120">para no ponto X</text>
+
+  <path class="arrow" d="M240,105 L320,105"/>
+  <rect class="box" x="320" y="60" width="200" height="90"/>
+  <text x="350" y="95">Inspect</text>
+  <text class="small" x="350" y="120">registradores/memória</text>
+
+  <path class="arrow" d="M520,105 L600,105"/>
+  <rect class="box" x="600" y="60" width="260" height="90"/>
+  <text x="630" y="95">Step / Continue</text>
+  <text class="small" x="630" y="120">controla execução</text>
+
+  <text class="small" x="40" y="200">Debugging é RE “light”: você observa o estado enquanto o programa roda, em vez de só adivinhar.</text>
+</svg>
