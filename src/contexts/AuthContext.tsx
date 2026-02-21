@@ -1,205 +1,123 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Module } from "@/data/types";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 
-type ProgressData = {
-  completedTopics: string[];
-  quizScores: Record<string, number>;
-  projectImages: Record<string, string>;
-};
+type Role = "admin" | "user" | null;
 
-const STORAGE_KEY_BASE = "cpp-master-progress";
-const PROGRESS_EVENT = "cpp-progress-updated";
-
-const emptyProgress: ProgressData = {
-  completedTopics: [],
-  quizScores: {},
-  projectImages: {},
-};
-
-function makeStorageKey(userId?: string | null) {
-  return `${STORAGE_KEY_BASE}:${userId ?? "guest"}`;
+interface AuthState {
+  isReady: boolean;
+  user: User | null;
+  session: Session | null;
+  role: Role;
+  email: string | null;
+  signInWithGoogle: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
-function safeParse(raw: string | null): ProgressData {
-  if (!raw) return emptyProgress;
-  try {
-    const p = JSON.parse(raw);
-    return {
-      completedTopics: Array.isArray(p?.completedTopics) ? p.completedTopics : [],
-      quizScores: p?.quizScores && typeof p.quizScores === "object" ? p.quizScores : {},
-      projectImages: p?.projectImages && typeof p.projectImages === "object" ? p.projectImages : {},
-    };
-  } catch {
-    return emptyProgress;
-  }
+const AuthContext = createContext<AuthState | null>(null);
+
+async function fetchRole(userId: string): Promise<Role> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
+
+  if (error) return null;
+  if (data?.role === "admin") return "admin";
+  return "user";
 }
 
-export const useProgress = (modules: Module[], userId?: string | null) => {
-  const storageKey = makeStorageKey(userId);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [isReady, setIsReady] = useState(false);
+  const [session, setSession] = useState<Session | null>(null);
+  const [role, setRole] = useState<Role>(null);
 
-  const [progress, setProgress] = useState<ProgressData>(() => {
-    if (typeof window === "undefined") return emptyProgress;
-    return safeParse(localStorage.getItem(storageKey));
-  });
-
-  // Recarrega quando trocar de conta
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setProgress(safeParse(localStorage.getItem(storageKey)));
-  }, [storageKey]);
+    let unsub: { data?: { subscription: { unsubscribe: () => void } } } | null = null;
 
-  // Sincroniza Layout <-> TopicPage (mesma aba)
-  useEffect(() => {
-    const onProgress = () => {
-      setProgress(safeParse(localStorage.getItem(storageKey)));
+    const init = async () => {
+      if (!supabase) {
+        setIsReady(true);
+        return;
+      }
+
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session ?? null);
+
+      if (data.session?.user?.id) {
+        setRole(await fetchRole(data.session.user.id));
+      } else {
+        setRole(null);
+      }
+
+      unsub = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+        setSession(newSession);
+        if (newSession?.user?.id) setRole(await fetchRole(newSession.user.id));
+        else setRole(null);
+      });
+
+      setIsReady(true);
     };
 
-    window.addEventListener(PROGRESS_EVENT, onProgress as EventListener);
-
-    // opcional: se mudar em outra aba, o storage event funciona
-    window.addEventListener("storage", onProgress);
+    init();
 
     return () => {
-      window.removeEventListener(PROGRESS_EVENT, onProgress as EventListener);
-      window.removeEventListener("storage", onProgress);
+      unsub?.data?.subscription.unsubscribe();
     };
-  }, [storageKey]);
+  }, []);
 
-  const saveProgress = useCallback(
-    (next: ProgressData) => {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(next));
-      } catch {}
-      setProgress(next);
-      window.dispatchEvent(new Event(PROGRESS_EVENT));
-    },
-    [storageKey]
-  );
+  const api = useMemo<AuthState>(() => {
+    const user = session?.user ?? null;
 
-  const completeTopic = useCallback(
-    (topicId: string) => {
-      setProgress((prev) => {
-        if (prev.completedTopics.includes(topicId)) return prev;
-        const next = { ...prev, completedTopics: [...prev.completedTopics, topicId] };
-        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-        window.dispatchEvent(new Event(PROGRESS_EVENT));
-        return next;
-      });
-    },
-    [storageKey]
-  );
+    return {
+      isReady,
+      user,
+      session,
+      role,
+      email: user?.email ?? null,
 
-  const saveProjectImage = useCallback(
-    (topicId: string, dataUrl: string) => {
-      setProgress((prev) => {
-        const next = {
-          ...prev,
-          projectImages: { ...(prev.projectImages ?? {}), [topicId]: dataUrl },
-        };
-        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-        window.dispatchEvent(new Event(PROGRESS_EVENT));
-        return next;
-      });
-    },
-    [storageKey]
-  );
+      async signInWithGoogle() {
+        if (!supabase) throw new Error("Supabase not configured");
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo: window.location.origin },
+        });
+        if (error) throw error;
+      },
 
-  const completeQuiz = useCallback(
-    (topicId: string, score: number) => {
-      setProgress((prev) => {
-        const completedTopics = prev.completedTopics.includes(topicId)
-          ? prev.completedTopics
-          : [...prev.completedTopics, topicId];
+      async signInWithEmail(email: string, password: string) {
+        if (!supabase) throw new Error("Supabase not configured");
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      },
 
-        const next: ProgressData = {
-          ...prev,
-          completedTopics,
-          quizScores: { ...(prev.quizScores ?? {}), [topicId]: score },
-        };
+      async signUpWithEmail(email: string, password: string) {
+        if (!supabase) throw new Error("Supabase not configured");
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
+        if (error) throw error;
+      },
 
-        try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch {}
-        window.dispatchEvent(new Event(PROGRESS_EVENT));
-        return next;
-      });
-    },
-    [storageKey]
-  );
+      async signOut() {
+        if (!supabase) return;
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+      },
+    };
+  }, [isReady, session, role]);
 
-  const isCompleted = useCallback(
-    (topicId: string) => progress.completedTopics.includes(topicId),
-    [progress.completedTopics]
-  );
+  return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;
+}
 
-  const getProjectImage = useCallback(
-    (topicId: string) => progress.projectImages?.[topicId] || null,
-    [progress.projectImages]
-  );
-
-  // Progressão: não congelar com modules vazio
-  const moduleTopicIds = useMemo(() => {
-    const map = new Map<number, string[]>();
-    for (const m of modules) map.set(m.id, m.topics.map((t) => t.id));
-    return map;
-  }, [modules]);
-
-  const canAccessModule = useCallback(
-    (moduleId: number) => {
-      const mod = modules.find((m) => m.id === moduleId);
-      if (!mod) return false;
-
-      const req = (mod as any).requiresModuleIds ?? [];
-      if (req.length === 0) return true;
-
-      for (const reqId of req) {
-        const ids = moduleTopicIds.get(reqId) || [];
-        const ok = ids.every((id) => progress.completedTopics.includes(id));
-        if (!ok) return false;
-      }
-      return true;
-    },
-    [modules, moduleTopicIds, progress.completedTopics]
-  );
-
-  const canAccessTopic = useCallback(
-    (moduleId: number, topicId: string) => {
-      if (!canAccessModule(moduleId)) return false;
-
-      const ids = moduleTopicIds.get(moduleId) || [];
-      const idx = ids.indexOf(topicId);
-      if (idx === -1) return false;
-
-      for (let i = 0; i < idx; i++) {
-        if (!progress.completedTopics.includes(ids[i])) return false;
-      }
-      return true;
-    },
-    [canAccessModule, moduleTopicIds, progress.completedTopics]
-  );
-
-  const getModuleProgress = useCallback(
-    (moduleId: number) => {
-      const mod = modules.find((m) => m.id === moduleId);
-      if (!mod || mod.topics.length === 0) return 0;
-
-      const completed = mod.topics.filter((t) => progress.completedTopics.includes(t.id)).length;
-      return Math.round((completed / mod.topics.length) * 100);
-    },
-    [modules, progress.completedTopics]
-  );
-
-  return {
-    completedTopics: progress.completedTopics,
-    quizScores: progress.quizScores,
-    projectImages: progress.projectImages,
-    completeTopic,
-    saveProjectImage,
-    completeQuiz,
-    isCompleted,
-    getProjectImage,
-    canAccessModule,
-    canAccessTopic,
-    getModuleProgress,
-    // se você quiser usar em outros lugares
-    saveProgress,
-  };
-};
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider />");
+  return ctx;
+}
