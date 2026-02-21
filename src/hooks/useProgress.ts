@@ -1,106 +1,211 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+Erikzinxxx
+Erikzinxxx
+rerik.fxp
+Disponível
+
+Erikzinxxx
+Erikzinxxx
+
+ — 14/01/2026 20:39
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 15/01/2026 11:46
+Imagem
+gay(yuri) — 27/01/2026 21:30
+Erikzinxxx
+Erikzinxxx
+
+ — 27/01/2026 21:30
+Você enviou uma versão de teste do Nitro para ze_pio_40339
+Imagem
+Sua versão de teste do Nitro foi entregue
+Graças a você, ze_pio_40339 poderá aproveitar o Nitro. Você está com tudo, que tal enviar mais um?
+
+Selecionar amigos
+gay(yuri) — 14/02/2026 13:24
+Vê conto tem
+No cartão da mãe
+Erikzinxxx
+Erikzinxxx
+
+ — 14/02/2026 13:25
+vou ver
+gay(yuri) — 14/02/2026 13:27
+Tá eai?
+Erikzinxxx
+Erikzinxxx
+
+ — 14/02/2026 13:28
+mandei no zap
+tem 10,99
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 17:25
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 18:37
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>RICK VK</title>
+    <meta name="description" content="C++ ensinamentos" />
+    <meta name="author" content="RICK VX" />
+
+    <!-- TODO: Update og:title to match your application name -->
+    <meta property="og:title" content="RICK VK" />
+    <meta property="og:description" content="C++ ensinamentos" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://github.com/pussy157/apredizagem-c-/blob/main/public/site.png?raw=true" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@RICK VK" />
+    <meta name="twitter:image" content="https://github.com/pussy157/apredizagem-c-/blob/main/public/site.png?raw=true" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 20:14
+https://apredizagem-c.vercel.app/
+RICK VK
+C++ ensinamentos
+RICK VK
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 21:12
+https://ads.luarmor.net/get_key?for=-wgusmcaFWwqX
+Erikzinxxx
+Erikzinxxx
+
+ — 00:44
+import { useState, useCallback, useMemo } from "react";
 import type { Module } from "@/data/types";
 
-type ProgressData = {
+const STORAGE_KEY = "cpp-master-progress";
+
+interface ProgressData {
+
+message.txt
+5 KB
+﻿
+gay(yuri)
+ze_pio_40339
+Luli
+Sou feio e alto e moreno
+import { useState, useCallback, useMemo } from "react";
+import type { Module } from "@/data/types";
+
+const STORAGE_KEY = "cpp-master-progress";
+
+interface ProgressData {
   completedTopics: string[];
   quizScores: Record<string, number>;
-  projectImages: Record<string, string>;
-};
+  projectImages: Record<string, string>; // topicId -> dataURL
+}
 
-// chave base
-const STORAGE_KEY_BASE = "cpp-master-progress";
-
-// monta chave por usuário (ou guest)
-const makeStorageKey = (userId?: string | null) =>
-  `${STORAGE_KEY_BASE}:${userId ?? "guest"}`;
-
-const emptyProgress: ProgressData = {
-  completedTopics: [],
-  quizScores: {},
-  projectImages: {},
-};
-
-const safeParse = (raw: string | null): ProgressData => {
-  if (!raw) return emptyProgress;
+const getStoredProgress = (): ProgressData => {
   try {
-    const p = JSON.parse(raw);
-    return {
-      completedTopics: Array.isArray(p?.completedTopics) ? p.completedTopics : [],
-      quizScores: p?.quizScores && typeof p.quizScores === "object" ? p.quizScores : {},
-      projectImages:
-        p?.projectImages && typeof p.projectImages === "object" ? p.projectImages : {},
-    };
+    // Segurança extra (caso rode em ambiente sem window)
+    if (typeof window === "undefined") {
+      return { completedTopics: [], quizScores: {}, projectImages: {} };
+    }
+
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored) as ProgressData;
   } catch {
-    return emptyProgress;
+    // ignore
   }
+
+  return { completedTopics: [], quizScores: {}, projectImages: {} };
 };
 
-/**
- * useProgress(modules, userId?)
- * - Se você já tem o userId no app (Supabase auth), passe aqui.
- * - Se não passar, cai em "guest".
- */
-export const useProgress = (modules: Module[], userId?: string | null) => {
-  const storageKey = makeStorageKey(userId);
+export const useProgress = (modules: Module[]) => {
+  const [progress, setProgress] = useState<ProgressData>(getStoredProgress);
 
-  const [progress, setProgress] = useState<ProgressData>(() => {
-    if (typeof window === "undefined") return emptyProgress;
-    return safeParse(localStorage.getItem(storageKey));
-  });
-
-  // ✅ quando troca de conta (userId), recarrega o progresso correto
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setProgress(safeParse(localStorage.getItem(storageKey)));
-  }, [storageKey]);
-
-  const saveProgress = useCallback(
-    (data: ProgressData) => {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(data));
-      } catch {
-        // ignore
-      }
-      setProgress(data);
-    },
-    [storageKey]
-  );
+  const saveProgress = useCallback((data: ProgressData) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore
+    }
+    setProgress(data);
+  }, []);
 
   const completeTopic = useCallback(
     (topicId: string) => {
-      if (progress.completedTopics.includes(topicId)) return;
+      const current = getStoredProgress();
+      if (current.completedTopics.includes(topicId)) return;
 
       saveProgress({
-        ...progress,
-        completedTopics: [...progress.completedTopics, topicId],
+        ...current,
+        completedTopics: [...current.completedTopics, topicId],
       });
     },
-    [progress, saveProgress]
+    [saveProgress]
   );
 
   const saveProjectImage = useCallback(
     (topicId: string, dataUrl: string) => {
+      const current = getStoredProgress();
+
       saveProgress({
-        ...progress,
-        projectImages: { ...(progress.projectImages ?? {}), [topicId]: dataUrl },
+        ...current,
+        projectImages: { ...(current.projectImages ?? {}), [topicId]: dataUrl },
       });
     },
-    [progress, saveProgress]
+    [saveProgress]
   );
 
   const completeQuiz = useCallback(
     (topicId: string, score: number) => {
-      const completedTopics = progress.completedTopics.includes(topicId)
-        ? progress.completedTopics
-        : [...progress.completedTopics, topicId];
+      const current = getStoredProgress();
 
-      saveProgress({
-        ...progress,
-        completedTopics,
-        quizScores: { ...(progress.quizScores ?? {}), [topicId]: score },
-      });
+      const newProgress: ProgressData = {
+        completedTopics: current.completedTopics.includes(topicId)
+          ? current.completedTopics
+          : [...current.completedTopics, topicId],
+        quizScores: { ...(current.quizScores ?? {}), [topicId]: score },
+        projectImages: current.projectImages ?? {},
+      };
+
+      saveProgress(newProgress);
     },
-    [progress, saveProgress]
+    [saveProgress]
   );
 
   const isCompleted = useCallback(
@@ -113,13 +218,19 @@ export const useProgress = (modules: Module[], userId?: string | null) => {
     [progress.projectImages]
   );
 
-  // ✅ não congelar quando modules carregar
+  /**
+   * ✅ BUGFIX: antes estava `[]` e “congelava” com modules vazio (loading).
+   * Agora recalcula quando `modules` mudar.
+   */
   const moduleTopicIds = useMemo(() => {
     const map = new Map<number, string[]>();
     for (const m of modules) map.set(m.id, m.topics.map((t) => t.id));
     return map;
   }, [modules]);
 
+  /**
+   * ✅ BUGFIX: precisa depender de `modules` também (antes congelava).
+   */
   const canAccessModule = useCallback(
     (moduleId: number) => {
       const mod = modules.find((m) => m.id === moduleId);
@@ -128,6 +239,7 @@ export const useProgress = (modules: Module[], userId?: string | null) => {
       const req = mod.requiresModuleIds ?? [];
       if (req.length === 0) return true;
 
+      // regra: módulo libera apenas quando TODOS os tópicos do(s) módulo(s) requerido(s) estiverem concluídos
       for (const reqId of req) {
         const ids = moduleTopicIds.get(reqId) || [];
         const ok = ids.every((id) => progress.completedTopics.includes(id));
@@ -147,19 +259,23 @@ export const useProgress = (modules: Module[], userId?: string | null) => {
       const idx = ids.indexOf(topicId);
       if (idx === -1) return false;
 
+      // regra: “não pode pular tópico”: precisa concluir todos anteriores no módulo
       for (let i = 0; i < idx; i++) {
         if (!progress.completedTopics.includes(ids[i])) return false;
       }
 
       return true;
     },
-    [canAccessModule, moduleTopicIds, progress.completedTopics]
+    [progress.completedTopics, moduleTopicIds, canAccessModule]
   );
 
+  /**
+   * ✅ BUGFIX: também precisa de `modules` nas deps (antes usava modules “antigo”).
+   */
   const getModuleProgress = useCallback(
     (moduleId: number) => {
       const mod = modules.find((m) => m.id === moduleId);
-      if (!mod || mod.topics.length === 0) return 0;
+      if (!mod) return 0;
 
       const completed = mod.topics.filter((t) =>
         progress.completedTopics.includes(t.id)
@@ -170,8 +286,8 @@ export const useProgress = (modules: Module[], userId?: string | null) => {
     [modules, progress.completedTopics]
   );
 
+  // Mantém exatamente a API que o resto do projeto espera
   return {
-    // API original
     completedTopics: progress.completedTopics,
     quizScores: progress.quizScores,
     projectImages: progress.projectImages,
@@ -185,3 +301,5 @@ export const useProgress = (modules: Module[], userId?: string | null) => {
     getModuleProgress,
   };
 };
+message.txt
+5 KB
