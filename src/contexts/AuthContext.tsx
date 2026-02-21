@@ -1,123 +1,303 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { Session, User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+Erikzinxxx
+Erikzinxxx
+rerik.fxp
+Disponível
 
-type Role = "admin" | "user" | null;
+Erikzinxxx
+Erikzinxxx
 
-interface AuthState {
-  isReady: boolean;
-  user: User | null;
-  session: Session | null;
-  role: Role;
-  email: string | null;
-  signInWithGoogle: () => Promise<void>;
-  signInWithEmail: (email: string, password: string) => Promise<void>;
-  signUpWithEmail: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
+ — 14/01/2026 20:39
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 15/01/2026 11:46
+Imagem
+gay(yuri) — 27/01/2026 21:30
+Erikzinxxx
+Erikzinxxx
+
+ — 27/01/2026 21:30
+Você enviou uma versão de teste do Nitro para ze_pio_40339
+Imagem
+Sua versão de teste do Nitro foi entregue
+Graças a você, ze_pio_40339 poderá aproveitar o Nitro. Você está com tudo, que tal enviar mais um?
+
+Selecionar amigos
+gay(yuri) — 14/02/2026 13:24
+Vê conto tem
+No cartão da mãe
+Erikzinxxx
+Erikzinxxx
+
+ — 14/02/2026 13:25
+vou ver
+gay(yuri) — 14/02/2026 13:27
+Tá eai?
+Erikzinxxx
+Erikzinxxx
+
+ — 14/02/2026 13:28
+mandei no zap
+tem 10,99
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 17:25
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 18:37
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- TODO: Set the document title to the name of your application -->
+    <title>RICK VK</title>
+    <meta name="description" content="C++ ensinamentos" />
+    <meta name="author" content="RICK VX" />
+
+    <!-- TODO: Update og:title to match your application name -->
+    <meta property="og:title" content="RICK VK" />
+    <meta property="og:description" content="C++ ensinamentos" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://github.com/pussy157/apredizagem-c-/blob/main/public/site.png?raw=true" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@RICK VK" />
+    <meta name="twitter:image" content="https://github.com/pussy157/apredizagem-c-/blob/main/public/site.png?raw=true" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+Imagem
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 20:14
+https://apredizagem-c.vercel.app/
+RICK VK
+C++ ensinamentos
+RICK VK
+Erikzinxxx
+Erikzinxxx
+
+ — 19/02/2026 21:12
+https://ads.luarmor.net/get_key?for=-wgusmcaFWwqX
+Erikzinxxx
+Erikzinxxx
+
+ — 00:44
+import { useState, useCallback, useMemo } from "react";
+import type { Module } from "@/data/types";
+
+const STORAGE_KEY = "cpp-master-progress";
+
+interface ProgressData {
+
+message.txt
+5 KB
+﻿
+gay(yuri)
+ze_pio_40339
+Luli
+Sou feio e alto e moreno
+import { useState, useCallback, useMemo } from "react";
+import type { Module } from "@/data/types";
+
+const STORAGE_KEY = "cpp-master-progress";
+
+interface ProgressData {
+  completedTopics: string[];
+  quizScores: Record<string, number>;
+  projectImages: Record<string, string>; // topicId -> dataURL
 }
 
-const AuthContext = createContext<AuthState | null>(null);
+const getStoredProgress = (): ProgressData => {
+  try {
+    // Segurança extra (caso rode em ambiente sem window)
+    if (typeof window === "undefined") {
+      return { completedTopics: [], quizScores: {}, projectImages: {} };
+    }
 
-async function fetchRole(userId: string): Promise<Role> {
-  if (!supabase) return null;
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single();
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored) as ProgressData;
+  } catch {
+    // ignore
+  }
 
-  if (error) return null;
-  if (data?.role === "admin") return "admin";
-  return "user";
-}
+  return { completedTopics: [], quizScores: {}, projectImages: {} };
+};
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isReady, setIsReady] = useState(false);
-  const [session, setSession] = useState<Session | null>(null);
-  const [role, setRole] = useState<Role>(null);
+export const useProgress = (modules: Module[]) => {
+  const [progress, setProgress] = useState<ProgressData>(getStoredProgress);
 
-  useEffect(() => {
-    let unsub: { data?: { subscription: { unsubscribe: () => void } } } | null = null;
-
-    const init = async () => {
-      if (!supabase) {
-        setIsReady(true);
-        return;
-      }
-
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session ?? null);
-
-      if (data.session?.user?.id) {
-        setRole(await fetchRole(data.session.user.id));
-      } else {
-        setRole(null);
-      }
-
-      unsub = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-        setSession(newSession);
-        if (newSession?.user?.id) setRole(await fetchRole(newSession.user.id));
-        else setRole(null);
-      });
-
-      setIsReady(true);
-    };
-
-    init();
-
-    return () => {
-      unsub?.data?.subscription.unsubscribe();
-    };
+  const saveProgress = useCallback((data: ProgressData) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch {
+      // ignore
+    }
+    setProgress(data);
   }, []);
 
-  const api = useMemo<AuthState>(() => {
-    const user = session?.user ?? null;
+  const completeTopic = useCallback(
+    (topicId: string) => {
+      const current = getStoredProgress();
+      if (current.completedTopics.includes(topicId)) return;
 
-    return {
-      isReady,
-      user,
-      session,
-      role,
-      email: user?.email ?? null,
+      saveProgress({
+        ...current,
+        completedTopics: [...current.completedTopics, topicId],
+      });
+    },
+    [saveProgress]
+  );
 
-      async signInWithGoogle() {
-        if (!supabase) throw new Error("Supabase not configured");
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: { redirectTo: window.location.origin },
-        });
-        if (error) throw error;
-      },
+  const saveProjectImage = useCallback(
+    (topicId: string, dataUrl: string) => {
+      const current = getStoredProgress();
 
-      async signInWithEmail(email: string, password: string) {
-        if (!supabase) throw new Error("Supabase not configured");
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      },
+      saveProgress({
+        ...current,
+        projectImages: { ...(current.projectImages ?? {}), [topicId]: dataUrl },
+      });
+    },
+    [saveProgress]
+  );
 
-      async signUpWithEmail(email: string, password: string) {
-        if (!supabase) throw new Error("Supabase not configured");
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-      },
+  const completeQuiz = useCallback(
+    (topicId: string, score: number) => {
+      const current = getStoredProgress();
 
-      async signOut() {
-        if (!supabase) return;
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-      },
-    };
-  }, [isReady, session, role]);
+      const newProgress: ProgressData = {
+        completedTopics: current.completedTopics.includes(topicId)
+          ? current.completedTopics
+          : [...current.completedTopics, topicId],
+        quizScores: { ...(current.quizScores ?? {}), [topicId]: score },
+        projectImages: current.projectImages ?? {},
+      };
 
-  return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;
-}
+      saveProgress(newProgress);
+    },
+    [saveProgress]
+  );
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider />");
-  return ctx;
-}
+  const isCompleted = useCallback(
+    (topicId: string) => progress.completedTopics.includes(topicId),
+    [progress.completedTopics]
+  );
+
+  const getProjectImage = useCallback(
+    (topicId: string) => progress.projectImages?.[topicId] || null,
+    [progress.projectImages]
+  );
+
+  /**
+   * ✅ BUGFIX: antes estava `[]` e “congelava” com modules vazio (loading).
+   * Agora recalcula quando `modules` mudar.
+   */
+  const moduleTopicIds = useMemo(() => {
+    const map = new Map<number, string[]>();
+    for (const m of modules) map.set(m.id, m.topics.map((t) => t.id));
+    return map;
+  }, [modules]);
+
+  /**
+   * ✅ BUGFIX: precisa depender de `modules` também (antes congelava).
+   */
+  const canAccessModule = useCallback(
+    (moduleId: number) => {
+      const mod = modules.find((m) => m.id === moduleId);
+      if (!mod) return false;
+
+      const req = mod.requiresModuleIds ?? [];
+      if (req.length === 0) return true;
+
+      // regra: módulo libera apenas quando TODOS os tópicos do(s) módulo(s) requerido(s) estiverem concluídos
+      for (const reqId of req) {
+        const ids = moduleTopicIds.get(reqId) || [];
+        const ok = ids.every((id) => progress.completedTopics.includes(id));
+        if (!ok) return false;
+      }
+
+      return true;
+    },
+    [modules, moduleTopicIds, progress.completedTopics]
+  );
+
+  const canAccessTopic = useCallback(
+    (moduleId: number, topicId: string) => {
+      if (!canAccessModule(moduleId)) return false;
+
+      const ids = moduleTopicIds.get(moduleId) || [];
+      const idx = ids.indexOf(topicId);
+      if (idx === -1) return false;
+
+      // regra: “não pode pular tópico”: precisa concluir todos anteriores no módulo
+      for (let i = 0; i < idx; i++) {
+        if (!progress.completedTopics.includes(ids[i])) return false;
+      }
+
+      return true;
+    },
+    [progress.completedTopics, moduleTopicIds, canAccessModule]
+  );
+
+  /**
+   * ✅ BUGFIX: também precisa de `modules` nas deps (antes usava modules “antigo”).
+   */
+  const getModuleProgress = useCallback(
+    (moduleId: number) => {
+      const mod = modules.find((m) => m.id === moduleId);
+      if (!mod) return 0;
+
+      const completed = mod.topics.filter((t) =>
+        progress.completedTopics.includes(t.id)
+      ).length;
+
+      return Math.round((completed / mod.topics.length) * 100);
+    },
+    [modules, progress.completedTopics]
+  );
+
+  // Mantém exatamente a API que o resto do projeto espera
+  return {
+    completedTopics: progress.completedTopics,
+    quizScores: progress.quizScores,
+    projectImages: progress.projectImages,
+    completeTopic,
+    saveProjectImage,
+    completeQuiz,
+    isCompleted,
+    getProjectImage,
+    canAccessModule,
+    canAccessTopic,
+    getModuleProgress,
+  };
+};
